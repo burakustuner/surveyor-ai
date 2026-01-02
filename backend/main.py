@@ -250,7 +250,8 @@ async def log_request(request: Request, user: dict, status_code: int,
 async def rate_limit_middleware(request: Request, call_next):
     """Rate limiting middleware"""
     # Auth gerektirmeyen endpoint'ler
-    if request.url.path in ["/health", "/docs", "/openapi.json"]:
+    public_endpoints = ["/health", "/docs", "/openapi.json", "/api/user/config"]
+    if request.url.path in public_endpoints:
         return await call_next(request)
     
     # Token kontrolü

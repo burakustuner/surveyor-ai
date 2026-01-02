@@ -684,16 +684,34 @@ async function initGoogleSignIn() {
     auto_select: false
   });
 
-  google.accounts.id.renderButton(
-    document.getElementById("googleSignIn"),
-    { 
-      theme: "outline", 
-      size: "large",
-      width: "100%",
-      text: "signin_with",
-      locale: "tr"
+  // Butona click handler ekle (Google renderButton çalışmazsa)
+  const signInBtn = document.getElementById("googleSignIn");
+  if (signInBtn) {
+    // Google'ın renderButton'ını dene
+    try {
+      google.accounts.id.renderButton(signInBtn, { 
+        theme: "outline", 
+        size: "large",
+        width: "100%",
+        text: "signin_with",
+        locale: "tr"
+      });
+    } catch (e) {
+      console.warn("Google renderButton failed, using manual handler:", e);
+      // Manuel handler ekle
+      signInBtn.addEventListener("click", () => {
+        // One Tap'i göster
+        google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
+            // One Tap gösterilemediyse, popup flow kullan
+            const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            const redirectUri = window.location.origin;
+            window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20profile%20email&nonce=${nonce}`;
+          }
+        });
+      });
     }
-  );
+  }
 
   // Mevcut token kontrolü
   const storedToken = localStorage.getItem("google_token");
@@ -706,6 +724,19 @@ function handleCredentialResponse(response) {
   googleToken = response.credential;
   localStorage.setItem("google_token", googleToken);
   verifyToken(googleToken);
+}
+
+// OAuth redirect callback'i handle et
+function handleOAuthCallback() {
+  const urlParams = new URLSearchParams(window.location.hash.substring(1));
+  const idToken = urlParams.get('id_token');
+  if (idToken) {
+    googleToken = idToken;
+    localStorage.setItem("google_token", googleToken);
+    verifyToken(googleToken);
+    // URL'den hash'i temizle
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
 }
 
 async function verifyToken(token) {
@@ -1584,6 +1615,11 @@ deleteTemplateBtn.onclick = () => {
   autoGrow();
   msgEl.focus();
   
+  // OAuth callback'i kontrol et
+  if (window.location.hash.includes('id_token=')) {
+    handleOAuthCallback();
+  }
+  
   // Google Sign-In'i başlat
   if (typeof google !== 'undefined' && google.accounts) {
     initGoogleSignIn();
@@ -1593,6 +1629,8 @@ deleteTemplateBtn.onclick = () => {
       setTimeout(() => {
         if (typeof google !== 'undefined' && google.accounts) {
           initGoogleSignIn();
+        } else {
+          console.error("Google Sign-In script failed to load");
         }
       }, 1000);
     });
