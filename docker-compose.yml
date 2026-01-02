@@ -27,3 +27,14 @@ services:
     command: tunnel run
     environment:
       - TUNNEL_TOKEN=eyJhIjoiN2ZiNjBkYTI5ZWEyN2VmOGNkOTBlMzc0N2RkZjQ4ODkiLCJ0IjoiMGZiNjQyOGUtYzg3Mi00ZDBiLTg0MmMtMWQ0NGQ1ZjY4N2JkIiwicyI6Ik5XUmhOakl6TURBdE1XVmlZaTAwTXpVMkxXRXdaall0TVRNMk5XVTROMk15TldVMCJ9
+  webhook:
+    image: almir/webhook:latest
+    container_name: webhook
+    restart: unless-stopped
+    ports:
+      - "9001:9000"
+    volumes:
+      - ./deploy/hooks.json:/etc/webhook/hooks.json:ro
+      - ./deploy.sh:/data/web-site/deploy.sh:ro
+      - ./:/data/web-site
+    command: ["-hooks=/etc/webhook/hooks.json", "-verbose"]
