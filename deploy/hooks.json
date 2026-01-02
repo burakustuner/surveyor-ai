@@ -1,0 +1,33 @@
+[
+  {
+    "id": "github-deploy",
+    "execute-command": "/data/web-site/deploy.sh",
+    "command-working-directory": "/data/web-site",
+    "response-message": "Deploy başlatıldı",
+    "trigger-rule": {
+      "and": [
+        {
+          "match": {
+            "type": "value",
+            "value": "refs/heads/main",
+            "parameter": {
+              "source": "payload",
+              "name": "ref"
+            }
+          }
+        }
+      ]
+    },
+    "pass-arguments-to-command": [
+      {
+        "source": "payload",
+        "name": "ref"
+      },
+      {
+        "source": "payload",
+        "name": "head_commit.id"
+      }
+    ]
+  }
+]
+

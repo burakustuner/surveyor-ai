@@ -1043,14 +1043,9 @@ async function ask(prompt){
   }, 120);
 
   // We will fill assistant message progressively
-    // We will fill assistant message progressively
   let assistantText = "";
   let assistantBubble = null;
   let firstChunkSeen = false;
-
-  // NOT: thinking balonunu ilk chunk gelene kadar SİLME
-  // assistant balonunu da ilk chunk gelince oluştur
-
 
   // abort previous in-flight request if any
   if (aborter) aborter.abort();
@@ -1077,7 +1072,8 @@ async function ask(prompt){
     if (!res.ok){
       clearInterval(timer);
       const t = await res.text();
-      assistantBubble.div.remove();
+      thinking.div.remove();
+      if (assistantBubble?.div) assistantBubble.div.remove();
       addBubble("err", "Hata", `${res.status} ${t}`, "http");
       s.messages.push({ role:"error", content: `${res.status} ${t}`, ts: Date.now() });
       s.updatedAt = Date.now();
@@ -1089,9 +1085,11 @@ async function ask(prompt){
 
     // Non-stream mode
     if (!state.stream){
+      thinking.div.remove();
       const data = await res.json();
       assistantText = data?.message?.content ?? "(boş cevap)";
-      assistantBubble.body.textContent = assistantText;
+      const created = addBubble("bot", "Ollama", assistantText, `model: ${model}`);
+      assistantBubble = { div: created.div, body: created.body };
 
       clearInterval(timer);
       const dur = ((performance.now() - started) / 1000).toFixed(1) + "s";
@@ -1177,7 +1175,8 @@ async function ask(prompt){
 
   }catch(e){
     clearInterval(timer);
-    assistantBubble.div.remove();
+    thinking.div.remove();
+    if (assistantBubble?.div) assistantBubble.div.remove();
     addBubble("err", "Hata", String(e), "client");
     const s2 = getActiveSession();
     s2.messages.push({ role:"error", content: String(e), ts: Date.now() });
