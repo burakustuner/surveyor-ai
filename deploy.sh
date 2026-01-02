@@ -1,21 +1,53 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd /data/web-site
+LOG_FILE="/data/web-site/deploy.log"
+PROJECT_DIR="/data/web-site"
+
+# Log fonksiyonu
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+log "=== Deploy başlatıldı ==="
+
+cd "$PROJECT_DIR" || exit 1
 
 # GitHub SSH deploy key ile pull
 export GIT_SSH_COMMAND="ssh -i /data/web-site/.deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
-echo "[deploy] fetching..."
-git fetch origin main
+log "Git fetch yapılıyor..."
+if git fetch origin main 2>&1 | tee -a "$LOG_FILE"; then
+    log "Git fetch başarılı"
+else
+    log "HATA: Git fetch başarısız!"
+    exit 1
+fi
 
-echo "[deploy] resetting..."
-git reset --hard origin/main
+log "Git reset yapılıyor (hard reset to origin/main)..."
+if git reset --hard origin/main 2>&1 | tee -a "$LOG_FILE"; then
+    log "Git reset başarılı"
+else
+    log "HATA: Git reset başarısız!"
+    exit 1
+fi
 
-echo "[deploy] docker compose down..."
-docker compose down
+log "Docker Compose durduruluyor..."
+if docker compose down 2>&1 | tee -a "$LOG_FILE"; then
+    log "Docker Compose down başarılı"
+else
+    log "UYARI: docker compose down sırasında hata (devam ediliyor)"
+fi
 
-echo "[deploy] docker compose up..."
-docker compose up -d
+log "Docker Compose başlatılıyor..."
+if docker compose up -d 2>&1 | tee -a "$LOG_FILE"; then
+    log "Docker Compose up başarılı"
+else
+    log "HATA: docker compose up başarısız!"
+    exit 1
+fi
 
-echo "[deploy] done"
+log "Container durumları:"
+docker compose ps 2>&1 | tee -a "$LOG_FILE"
+
+log "=== Deploy tamamlandı ==="
