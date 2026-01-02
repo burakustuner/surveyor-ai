@@ -1,6 +1,11 @@
 # Deploy key (güvenlik için Git'e eklenmemeli)
 .deploy_key
 
+# Environment variables (secret'lar)
+.env
+.env.local
+.env.*.local
+
 # Log dosyaları
 deploy.log
 *.log
