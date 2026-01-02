@@ -1,17 +1,25 @@
 #!/bin/sh
-set -eu
+# Hata durumunda dur ama undefined variable kontrolü yapma (set -u kaldırıldı)
+set -e
 
 LOG_FILE="/data/web-site/deploy.log"
 PROJECT_DIR="/data/web-site"
 
-# Log fonksiyonu
+# Log fonksiyonu - hata olsa bile çalışmaya devam et
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "N/A")
+    echo "[$TIMESTAMP] $1" >> "$LOG_FILE" 2>/dev/null || echo "[$TIMESTAMP] $1"
 }
 
+# Script başladı
 log "=== Deploy başlatıldı ==="
+log "Working directory: $(pwd)"
+log "User: $(whoami)"
 
-cd "$PROJECT_DIR" || exit 1
+cd "$PROJECT_DIR" || {
+    log "HATA: Dizin değiştirilemedi: $PROJECT_DIR"
+    exit 1
+}
 
 # GitHub SSH deploy key ile pull
 export GIT_SSH_COMMAND="ssh -i /data/web-site/.deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
