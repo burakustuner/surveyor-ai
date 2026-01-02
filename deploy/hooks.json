@@ -1,12 +1,8 @@
 [
   {
     "id": "deploy",
-    "execute-command": "/bin/sh",
+    "execute-command": "/data/web-site/deploy.sh",
     "command-working-directory": "/data/web-site",
-    "pass-arguments-to-command": [
-      { "source": "string", "name": "-c" },
-      { "source": "string", "name": "sh /data/web-site/deploy.sh" }
-    ],
     "trigger-rule": {
       "match": {
         "type": "value",

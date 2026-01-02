@@ -1,2 +1,13 @@
 FROM almir/webhook:latest
-RUN apk add --no-cache docker-cli docker-cli-compose git openssh-client
+
+# Root user olarak çalıştır (apk için gerekli)
+USER root
+
+# Git, docker-cli ve openssh-client yükle
+RUN apk add --no-cache \
+    git \
+    openssh-client \
+    docker-cli \
+    docker-cli-compose
+
+# Webhook genellikle root olarak çalışır, USER değiştirmeye gerek yok
