@@ -1,6 +1,5 @@
 [
   {
-<<<<<<< HEAD
     "id": "deploy",
     "execute-command": "/bin/bash",
     "command-working-directory": "/data/web-site",
@@ -16,40 +15,6 @@
           "name": "ref"
         }
       }
-    },
-    "secret": "dsgsbmımwoe203_AWergbsg_+r3f-"
+    }
   }
 ]
-=======
-    "id": "github-deploy",
-    "execute-command": "/data/web-site/deploy.sh",
-    "command-working-directory": "/data/web-site",
-    "response-message": "Deploy başlatıldı",
-    "trigger-rule": {
-      "and": [
-        {
-          "match": {
-            "type": "value",
-            "value": "refs/heads/main",
-            "parameter": {
-              "source": "payload",
-              "name": "ref"
-            }
-          }
-        }
-      ]
-    },
-    "pass-arguments-to-command": [
-      {
-        "source": "payload",
-        "name": "ref"
-      },
-      {
-        "source": "payload",
-        "name": "head_commit.id"
-      }
-    ]
-  }
-]
-
->>>>>>> b4af2c72e36d07c2283f15c0ee0c6de5826424e7
