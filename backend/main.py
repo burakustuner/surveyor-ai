@@ -273,22 +273,27 @@ async def rate_limit_middleware(request: Request, call_next):
     
     user_id = user_info.get("sub", "anonymous")
     
-    # Rate limit kontrolü
-    allowed, reset_time = check_rate_limit(user_id)
+    # Rate limit sadece /api/chat endpoint'inde uygulanır
+    # Diğer endpoint'ler (user/me, user/rate-limit, user/logs, tags, vb.) rate limit'i düşürmez
+    is_chat_endpoint = request.url.path == "/api/chat" and request.method == "POST"
     
-    if not allowed:
-        return JSONResponse(
-            status_code=429,
-            content={
-                "detail": "Rate limit exceeded",
-                "reset_at": reset_time
-            },
-            headers={
-                "X-RateLimit-Limit": str(RATE_LIMIT_REQUESTS),
-                "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset": str(reset_time)
-            }
-        )
+    # Rate limit kontrolü (sadece chat endpoint'i için)
+    if is_chat_endpoint:
+        allowed, reset_time = check_rate_limit(user_id)
+        
+        if not allowed:
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "detail": "Rate limit exceeded",
+                    "reset_at": reset_time
+                },
+                headers={
+                    "X-RateLimit-Limit": str(RATE_LIMIT_REQUESTS),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(reset_time)
+                }
+            )
     
     # İsteği işle
     start_time = time.time()
@@ -304,7 +309,7 @@ async def rate_limit_middleware(request: Request, call_next):
             response_time
         )
         
-        # Rate limit headers ekle
+        # Rate limit headers ekle (mevcut durumu göster, sadece chat endpoint'lerinde güncellenir)
         with get_db() as db:
             cursor = db.cursor()
             cursor.execute("""
