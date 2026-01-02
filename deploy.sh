@@ -28,7 +28,7 @@ log "PWD(before cd): $(pwd)"
 log "USER: $(whoami)"
 
 cd "$PROJECT_DIR" || { log "HATA: cd olmadi: $PROJECT_DIR"; exit 1; }
-
+run git config --global --add safe.directory "$PROJECT_DIR"
 # SSH (deploy key) ayarları
 mkdir -p /root/.ssh 2>/dev/null || true
 export GIT_SSH_COMMAND="ssh -i /data/web-site/.deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
