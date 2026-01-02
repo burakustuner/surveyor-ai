@@ -39,6 +39,7 @@ services:
       - ./deploy.sh:/data/web-site/deploy.sh:ro
       - ./:/data/web-site
       - ./.deploy_key:/data/web-site/.deploy_key:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
     command: ["-hooks=/etc/webhook/hooks.json", "-verbose"]

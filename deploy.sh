@@ -13,6 +13,16 @@ log "=== Deploy başlatıldı ==="
 
 cd "$PROJECT_DIR" || exit 1
 
+# Docker CLI container içinde çalışıyoruz (docker:cli image)
+# Git'i yüklememiz gerekiyor
+if ! command -v git >/dev/null 2>&1; then
+    log "Git yükleniyor..."
+    apk add --no-cache git openssh-client >/dev/null 2>&1 || {
+        log "HATA: Git yüklenemedi!"
+        exit 1
+    }
+fi
+
 # GitHub SSH deploy key ile pull
 export GIT_SSH_COMMAND="ssh -i /data/web-site/.deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
@@ -33,14 +43,14 @@ else
 fi
 
 log "Docker Compose durduruluyor..."
-if docker compose down 2>&1 | tee -a "$LOG_FILE"; then
+if docker compose -f /data/web-site/docker-compose.yml down 2>&1 | tee -a "$LOG_FILE"; then
     log "Docker Compose down başarılı"
 else
     log "UYARI: docker compose down sırasında hata (devam ediliyor)"
 fi
 
 log "Docker Compose başlatılıyor..."
-if docker compose up -d 2>&1 | tee -a "$LOG_FILE"; then
+if docker compose -f /data/web-site/docker-compose.yml up -d 2>&1 | tee -a "$LOG_FILE"; then
     log "Docker Compose up başarılı"
 else
     log "HATA: docker compose up başarısız!"
@@ -48,6 +58,6 @@ else
 fi
 
 log "Container durumları:"
-docker compose ps 2>&1 | tee -a "$LOG_FILE"
+docker compose -f /data/web-site/docker-compose.yml ps 2>&1 | tee -a "$LOG_FILE"
 
 log "=== Deploy tamamlandı ==="
