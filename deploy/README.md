@@ -8,12 +8,15 @@ Bu klasör GitHub webhook entegrasyonu için gerekli dosyaları içerir.
 
 GitHub repository'nizde:
 1. Settings → Webhooks → Add webhook
-2. Payload URL: `http://your-server-ip:9001/hooks/github-deploy`
-   - Veya nginx üzerinden: `http://your-domain/hooks/github-deploy`
+2. Payload URL: 
+   - **Doğrudan webhook:** `http://your-server-ip:9001/hooks/deploy`
+   - **Nginx üzerinden:** `http://your-domain/hooks/deploy`
 3. Content type: `application/json`
-4. Secret: (opsiyonel, güvenlik için önerilir)
-5. Events: "Just the push event" seçin
+4. Secret: (opsiyonel, güvenlik için önerilir - `.env` dosyasındaki `WEBHOOK_SECRET`)
+5. Events: **"Just the push event"** seçin
 6. Active: ✓
+
+**Not:** Hook ID `deploy` olduğu için URL `/hooks/deploy` olmalıdır.
 
 ### 2. Webhook Secret (Opsiyonel ama Önerilir)
 
@@ -57,20 +60,31 @@ Güvenlik için webhook secret kullanmak isterseniz:
 ### 3. Deploy Script
 
 `deploy.sh` script'i şunları yapar:
-- Git pull (main branch)
-- docker-compose down
-- docker-compose up -d --build
+1. Git fetch origin main
+2. Git reset --hard origin/main (sunucudaki değişiklikleri GitHub ile senkronize eder)
+3. docker compose down
+4. docker compose up -d
 
-Tüm işlemler `/data/web-site/deploy.log` dosyasına loglanır.
+**Tüm işlemler** `/data/web-site/deploy.log` dosyasına loglanır.
+
+**Not:** Script SSH deploy key kullanır (`.deploy_key` dosyası).
 
 ### 4. Test
 
 Webhook'u test etmek için:
 ```bash
-curl -X POST http://localhost:9001/hooks/github-deploy \
+# Doğrudan webhook container'ına
+curl -X POST http://localhost:9001/hooks/deploy \
+  -H "Content-Type: application/json" \
+  -d '{"ref":"refs/heads/main","head_commit":{"id":"test"}}'
+
+# Nginx üzerinden (eğer domain varsa)
+curl -X POST http://your-domain/hooks/deploy \
   -H "Content-Type: application/json" \
   -d '{"ref":"refs/heads/main","head_commit":{"id":"test"}}'
 ```
+
+**Başarılı yanıt:** `Deploy başlatıldı` veya benzeri bir mesaj almalısınız.
 
 ## Sorun Giderme
 
