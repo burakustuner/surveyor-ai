@@ -1,7 +1,7 @@
 [
   {
     "id": "deploy",
-    "execute-command": "/bin/bash",
+    "execute-command": "/bin/sh",
     "command-working-directory": "/data/web-site",
     "pass-arguments-to-command": [
       { "source": "string", "name": "/data/web-site/deploy.sh" }

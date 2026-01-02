@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 LOG_FILE="/data/web-site/deploy.log"
 PROJECT_DIR="/data/web-site"
