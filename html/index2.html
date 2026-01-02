@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Surveyor AI</title>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 16px;
+    }
+
+    #chat {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      height: 420px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #1e293b;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 1px solid #1e293b;
+      background: #2563eb;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .me { color: #38bdf8; }
+    .bot { color: #a7f3d0; }
+    .err { color: #fca5a5; }
+  </style>
+</head>
+<body>
+
+<h1>Surveyor AI</h1>
+
+<div id="chat"></div>
+
+<div class="row">
+  <input id="msg" placeholder="Mesaj yaz ve Enter'a bas…" />
+  <button id="send">Gönder</button>
+</div>
+
+<script>
+  const chat = document.getElementById("chat");
+  const msg  = document.getElementById("msg");
+  const send = document.getElementById("send");
+
+  function line(cls, who, text) {
+    chat.innerHTML += `<div class="${cls}"><b>${who}:</b> ${text}</div><br>`;
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  async function ask(prompt) {
+    line("me", "Sen", prompt);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama3.2:3b",
+          messages: [
+            {
+    role: "system",
+  content: `
+Türkçe konuş.
+Sorulara DOĞRU ve KISA cevap ver.
+Genel kültür sorularında uydurma.
+Bilmiyorsan "Bilmiyorum" de.
+`	
+},
+            { role: "user", content: prompt }
+          ],
+          stream: false
+        })
+      });
+
+      if (!res.ok) {
+        const t = await res.text();
+        line("err", "Hata", res.status + " " + t);
+        return;
+      }
+
+      const data = await res.json();
+      line("bot", "Ollama", data.message?.content ?? "(boş cevap)");
+
+    } catch (e) {
+      line("err", "Hata", e.toString());
+    }
+  }
+
+  send.onclick = () => {
+    const text = msg.value.trim();
+    if (!text) return;
+    msg.value = "";
+    ask(text);
+  };
+
+  msg.addEventListener("keydown", e => {
+    if (e.key === "Enter") send.click();
+  });
+</script>
+
+</body>
+</html>

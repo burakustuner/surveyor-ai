@@ -1,0 +1,6 @@
+.env
+ollama/models/
+ollama/id_ed25519*
+cloudflared/
+node_modules/
+.DS_Store
