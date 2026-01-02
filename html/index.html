@@ -490,7 +490,7 @@
           <img id="userPicture" src="" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border);" />
           <div style="flex: 1; min-width: 0;">
             <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="userName">Kullanıcı</div>
-            <div class="smallMuted" id="rateLimitInfo">Yükleniyor...</div>
+            <div class="smallMuted" id="rateLimitInfo" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem;">Yükleniyor...</div>
           </div>
         </div>
         <button class="danger" id="googleSignOut" type="button" style="width: 100%;">Çıkış Yap</button>
@@ -820,15 +820,40 @@ async function loadRateLimitInfo() {
     });
     if (res.ok) {
       const data = await res.json();
-      const remaining = data.remaining || 0;
-      const limit = data.limit || 100;
-      const resetDate = new Date(data.reset_at * 1000);
-      document.getElementById("rateLimitInfo").textContent = 
-        `${remaining}/${limit} istek kaldı (${resetDate.toLocaleTimeString("tr-TR")} sıfırlanır)`;
+      updateRateLimitDisplay(data);
     }
   } catch (e) {
     console.error("Rate limit info error:", e);
   }
+}
+
+function updateRateLimitDisplay(data) {
+  const remaining = data.remaining || 0;
+  const limit = data.limit || 100;
+  const resetDate = new Date(data.reset_at * 1000);
+  const resetTime = resetDate.toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' });
+  // Daha kısa format: "88/100 (01:00)"
+  document.getElementById("rateLimitInfo").textContent = 
+    `${remaining}/${limit} (${resetTime})`;
+}
+
+function updateRateLimitFromHeaders(response) {
+  // Response header'larından rate limit bilgisini al
+  const remaining = response.headers.get("X-RateLimit-Remaining");
+  const limit = response.headers.get("X-RateLimit-Limit");
+  const reset = response.headers.get("X-RateLimit-Reset");
+  
+  if (remaining !== null && limit !== null) {
+    const remainingNum = parseInt(remaining);
+    const limitNum = parseInt(limit);
+    const resetDate = reset ? new Date(parseInt(reset) * 1000) : new Date(Date.now() + 3600000);
+    const resetTime = resetDate.toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' });
+    // Daha kısa format: "88/100 (01:00)"
+    document.getElementById("rateLimitInfo").textContent = 
+      `${remainingNum}/${limitNum} (${resetTime})`;
+    return true; // Header'dan bilgi alındı
+  }
+  return false; // Header'da bilgi yok
 }
 
 document.getElementById("googleSignOut")?.addEventListener("click", () => {
@@ -1350,6 +1375,10 @@ async function ask(prompt){
       saveState();
       renderSessions();
       setStatus(true, "Hazır");
+      // Rate limit bilgisini güncelle (header'dan veya API'den)
+      if (!updateRateLimitFromHeaders(res)) {
+        loadRateLimitInfo();
+      }
       return;
     }
 
@@ -1421,6 +1450,9 @@ async function ask(prompt){
     saveState();
     renderSessions();
     setStatus(true, "Hazır");
+    // Rate limit bilgisini güncelle (header'dan veya API'den)
+    // Not: Streaming response'da header'ları almak için response'u saklamamız gerekir
+    loadRateLimitInfo();
 
   }catch(e){
     clearInterval(timer);
