@@ -344,7 +344,42 @@ async def get_config():
         "rate_limit_window": RATE_LIMIT_WINDOW
     }
 
-# Ollama proxy endpoints
+# User info endpoint (genel proxy route'undan ÖNCE tanımlanmalı)
+@app.get("/api/user/me")
+async def get_user_info(user: dict = Depends(get_current_user)):
+    """Kullanıcı bilgilerini döndür"""
+    return user
+
+# Rate limit info endpoint (genel proxy route'undan ÖNCE tanımlanmalı)
+@app.get("/api/user/rate-limit")
+async def get_rate_limit_info(user: dict = Depends(get_current_user)):
+    """Rate limit bilgilerini döndür"""
+    user_id = user["google_id"]
+    now = int(time.time())
+    window_start = now - (now % RATE_LIMIT_WINDOW)
+    
+    with get_db() as db:
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT requests, window_start FROM rate_limits WHERE user_id = ?
+        """, (user_id,))
+        row = cursor.fetchone()
+        
+        if row and row["window_start"] == window_start:
+            remaining = max(0, RATE_LIMIT_REQUESTS - row["requests"])
+            reset_time = window_start + RATE_LIMIT_WINDOW
+        else:
+            remaining = RATE_LIMIT_REQUESTS
+            reset_time = window_start + RATE_LIMIT_WINDOW
+    
+    return {
+        "limit": RATE_LIMIT_REQUESTS,
+        "remaining": remaining,
+        "reset_at": reset_time,
+        "window_seconds": RATE_LIMIT_WINDOW
+    }
+
+# Ollama proxy endpoints (özel endpoint'lerden SONRA tanımlanmalı)
 @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 async def proxy_to_ollama(path: str, request: Request, user: dict = Depends(get_current_user)):
     """Ollama API'sine proxy"""
@@ -401,41 +436,6 @@ async def proxy_to_ollama(path: str, request: Request, user: dict = Depends(get_
                 status_code=502,
                 content={"detail": f"Ollama error: {str(e)}"}
             )
-
-# User info endpoint
-@app.get("/api/user/me")
-async def get_user_info(user: dict = Depends(get_current_user)):
-    """Kullanıcı bilgilerini döndür"""
-    return user
-
-# Rate limit info endpoint
-@app.get("/api/user/rate-limit")
-async def get_rate_limit_info(user: dict = Depends(get_current_user)):
-    """Rate limit bilgilerini döndür"""
-    user_id = user["google_id"]
-    now = int(time.time())
-    window_start = now - (now % RATE_LIMIT_WINDOW)
-    
-    with get_db() as db:
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT requests, window_start FROM rate_limits WHERE user_id = ?
-        """, (user_id,))
-        row = cursor.fetchone()
-        
-        if row and row["window_start"] == window_start:
-            remaining = max(0, RATE_LIMIT_REQUESTS - row["requests"])
-            reset_time = window_start + RATE_LIMIT_WINDOW
-        else:
-            remaining = RATE_LIMIT_REQUESTS
-            reset_time = window_start + RATE_LIMIT_WINDOW
-    
-    return {
-        "limit": RATE_LIMIT_REQUESTS,
-        "remaining": remaining,
-        "reset_at": reset_time,
-        "window_seconds": RATE_LIMIT_WINDOW
-    }
 
 # Startup
 @app.on_event("startup")
