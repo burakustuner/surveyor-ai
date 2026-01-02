@@ -26,10 +26,12 @@ Bu projede kullanılan secret key'ler environment variable olarak yönetiliyor.
 ```bash
 cd /data/web-site
 cat > .env << EOF
-WEBHOOK_SECRET=dsgsbmımwoe203_AWergbsg_+r3f-
-CLOUDFLARE_TUNNEL_TOKEN=eyJhIjoiN2ZiNjBkYTI5ZWEyN2VmOGNkOTBlMzc0N2RkZjQ4ODkiLCJ0IjoiMGZiNjQyOGUtYzg3Mi00ZDBiLTg0MmMtMWQ0NGQ1ZjY4N2JkIiwicyI6Ik5XUmhOakl6TURBdE1XVmlZaTAwTXpVMkxXRXdaall0TVRNMk5XVTROMk15TldVMCJ9
+WEBHOOK_SECRET=your_webhook_secret_here
+CLOUDFLARE_TUNNEL_TOKEN=your_cloudflare_tunnel_token_here
 EOF
 ```
+
+**Not:** Secret key'leri GitHub webhook ayarlarından ve Cloudflare dashboard'dan alın.
 
 **2. Webhook Secret (Opsiyonel ama Önerilir):**
 
