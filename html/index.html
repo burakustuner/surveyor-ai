@@ -629,7 +629,7 @@
  *  Storage keys
  *  ------------------------- */
 const STORE_KEY = "surveyor_ai_v2";
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // .env'den veya config'den alınacak
+const GOOGLE_CLIENT_ID = null; // Backend'den alınacak (/api/user/config)
 const nowStr = () => new Date().toLocaleString("tr-TR", { hour12: false });
 
 /** -------------------------
