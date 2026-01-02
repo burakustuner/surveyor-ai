@@ -664,7 +664,9 @@ async function loadGoogleClientId() {
 }
 
 async function initGoogleSignIn() {
+  console.log("initGoogleSignIn called");
   const clientId = await loadGoogleClientId();
+  console.log("Client ID loaded:", clientId ? "Yes" : "No");
   googleClientId = clientId;
   
   if (!clientId) {
@@ -674,48 +676,77 @@ async function initGoogleSignIn() {
   }
 
   if (typeof google === 'undefined' || !google.accounts) {
-    console.warn("Google Sign-In script not loaded");
+    console.warn("Google Sign-In script not loaded, waiting...");
+    // Script yüklenene kadar bekle
+    const checkGoogle = setInterval(() => {
+      if (typeof google !== 'undefined' && google.accounts) {
+        clearInterval(checkGoogle);
+        console.log("Google script loaded, initializing...");
+        setupGoogleSignIn(clientId);
+      }
+    }, 500);
+    setTimeout(() => clearInterval(checkGoogle), 10000); // 10 saniye sonra durdur
     return;
   }
 
+  setupGoogleSignIn(clientId);
+}
+
+function setupGoogleSignIn(clientId) {
+  console.log("setupGoogleSignIn called with clientId:", clientId ? "present" : "missing");
+  
   google.accounts.id.initialize({
     client_id: clientId,
     callback: handleCredentialResponse,
     auto_select: false
   });
 
-  // Butona click handler ekle (Google renderButton çalışmazsa)
+  // Butona click handler ekle - HER ZAMAN manuel handler ekle
   const signInBtn = document.getElementById("googleSignIn");
-  if (signInBtn) {
-    // Google'ın renderButton'ını dene
-    try {
-      google.accounts.id.renderButton(signInBtn, { 
-        theme: "outline", 
-        size: "large",
-        width: "100%",
-        text: "signin_with",
-        locale: "tr"
-      });
-    } catch (e) {
-      console.warn("Google renderButton failed, using manual handler:", e);
-      // Manuel handler ekle
-      signInBtn.addEventListener("click", () => {
-        // One Tap'i göster
-        google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
-            // One Tap gösterilemediyse, popup flow kullan
-            const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            const redirectUri = window.location.origin;
-            window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20profile%20email&nonce=${nonce}`;
-          }
-        });
-      });
-    }
+  if (!signInBtn) {
+    console.error("Google Sign-In button not found!");
+    return;
+  }
+
+  console.log("Adding click handler to button");
+  
+  // Önce mevcut listener'ları temizle
+  const newBtn = signInBtn.cloneNode(true);
+  signInBtn.parentNode.replaceChild(newBtn, signInBtn);
+  
+  // Manuel click handler ekle
+  newBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Google Sign-In button clicked!");
+    
+    // Google'ın popup flow'unu kullan
+    const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const redirectUri = window.location.origin;
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20profile%20email&nonce=${nonce}`;
+    
+    console.log("Redirecting to Google OAuth:", authUrl);
+    window.location.href = authUrl;
+  });
+
+  // Google'ın renderButton'ını da dene (görsel amaçlı, ama click handler'ımız çalışacak)
+  try {
+    google.accounts.id.renderButton(newBtn, { 
+      theme: "outline", 
+      size: "large",
+      width: "100%",
+      text: "signin_with",
+      locale: "tr"
+    });
+    console.log("Google renderButton applied");
+  } catch (e) {
+    console.warn("Google renderButton failed (this is OK, manual handler will work):", e);
   }
 
   // Mevcut token kontrolü
   const storedToken = localStorage.getItem("google_token");
   if (storedToken) {
+    console.log("Found stored token, verifying...");
     verifyToken(storedToken);
   }
 }
@@ -1621,19 +1652,27 @@ deleteTemplateBtn.onclick = () => {
   }
   
   // Google Sign-In'i başlat
-  if (typeof google !== 'undefined' && google.accounts) {
-    initGoogleSignIn();
-  } else {
-    // Google script yüklenene kadar bekle
+  console.log("Initializing Google Sign-In...");
+  console.log("Google object:", typeof google !== 'undefined' ? "loaded" : "not loaded");
+  
+  // Script yüklenmesini bekle
+  function waitForGoogle() {
+    if (typeof google !== 'undefined' && google.accounts) {
+      console.log("Google script is ready");
+      initGoogleSignIn();
+    } else {
+      console.log("Waiting for Google script...");
+      setTimeout(waitForGoogle, 500);
+    }
+  }
+  
+  // Sayfa yüklendikten sonra başlat
+  if (document.readyState === 'loading') {
     window.addEventListener('load', () => {
-      setTimeout(() => {
-        if (typeof google !== 'undefined' && google.accounts) {
-          initGoogleSignIn();
-        } else {
-          console.error("Google Sign-In script failed to load");
-        }
-      }, 1000);
+      setTimeout(waitForGoogle, 1000);
     });
+  } else {
+    setTimeout(waitForGoogle, 1000);
   }
   
   loadModels();
