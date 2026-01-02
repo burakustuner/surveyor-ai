@@ -743,12 +743,8 @@ function setupGoogleSignIn(clientId) {
     console.warn("Google renderButton failed (this is OK, manual handler will work):", e);
   }
 
-  // Mevcut token kontrolü
-  const storedToken = localStorage.getItem("google_token");
-  if (storedToken) {
-    console.log("Found stored token, verifying...");
-    verifyToken(storedToken);
-  }
+  // Token kontrolü sayfa yüklendiğinde yapılıyor, burada tekrar yapmaya gerek yok
+  // (Çift kontrol önlemek için kaldırıldı)
 }
 
 function handleCredentialResponse(response) {
@@ -796,6 +792,8 @@ function showLoginUI() {
   document.getElementById("loginSection").style.display = "block";
   document.getElementById("userSection").style.display = "none";
   currentUser = null;
+  // Rate limit bilgisini temizle
+  document.getElementById("rateLimitInfo").textContent = "Giriş gerekli";
 }
 
 function updateUserUI(user) {
@@ -821,9 +819,13 @@ async function loadRateLimitInfo() {
     if (res.ok) {
       const data = await res.json();
       updateRateLimitDisplay(data);
+    } else {
+      // Hata durumunda varsayılan mesaj göster
+      document.getElementById("rateLimitInfo").textContent = "Yüklenemedi";
     }
   } catch (e) {
     console.error("Rate limit info error:", e);
+    document.getElementById("rateLimitInfo").textContent = "Hata";
   }
 }
 
@@ -1681,6 +1683,17 @@ deleteTemplateBtn.onclick = () => {
   // OAuth callback'i kontrol et
   if (window.location.hash.includes('id_token=')) {
     handleOAuthCallback();
+  } else {
+    // Sayfa yüklendiğinde token kontrolü yap (Google script'i beklemeden)
+    const storedToken = localStorage.getItem("google_token");
+    if (storedToken) {
+      console.log("Found stored token on page load, verifying...");
+      googleToken = storedToken;
+      verifyToken(storedToken);
+    } else {
+      // Token yoksa login UI'ı göster
+      showLoginUI();
+    }
   }
   
   // Google Sign-In'i başlat
