@@ -9,7 +9,10 @@
 # Log dosyaları
 deploy.log
 *.log
-
+.deploy_key
+.deploy_key.pub
+deploy/id_ed25519
+deploy/id_ed25519.pub
 # Ollama model verileri
 ollama/
 
