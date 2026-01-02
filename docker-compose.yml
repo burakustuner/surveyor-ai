@@ -28,20 +28,20 @@ services:
     command: tunnel run
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
-webhook:
-  build:
-    context: .
-    dockerfile: ./deploy/webhook.Dockerfile
-  container_name: webhook
-  restart: unless-stopped
-  ports:
-    - "9001:9000"
-  volumes:
-    - ./deploy/hooks.json:/etc/webhook/hooks.json:ro
-    - ./deploy.sh:/data/web-site/deploy.sh:ro
-    - ./:/data/web-site
-    - ./.deploy_key:/data/web-site/.deploy_key:ro
-    - /var/run/docker.sock:/var/run/docker.sock:ro
-  environment:
-    - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
-  command: ["-hooks=/etc/webhook/hooks.json", "-verbose"]
+  webhook:
+    build:
+      context: .
+      dockerfile: ./deploy/webhook.Dockerfile
+    container_name: webhook
+    restart: unless-stopped
+    ports:
+      - "9001:9000"
+    volumes:
+      - ./deploy/hooks.json:/etc/webhook/hooks.json:ro
+      - ./deploy.sh:/data/web-site/deploy.sh:ro
+      - ./:/data/web-site
+      - ./.deploy_key:/data/web-site/.deploy_key:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
+    command: ["-hooks=/etc/webhook/hooks.json", "-verbose"]
