@@ -16,6 +16,12 @@ deploy/id_ed25519.pub
 # Ollama model verileri
 ollama/
 
+# Veritabanı dosyaları
+db/
+*.db
+*.sqlite
+*.sqlite3
+
 # Yedek dosyalar
 *_yedek*
 *_backup*

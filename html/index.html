@@ -473,10 +473,28 @@
         <div class="logo"></div>
         <div class="title">
           <b>Surveyor AI</b>
-          <span>@burakustuner.com</span>
+          <span id="userEmail">@burakustuner.com</span>
         </div>
       </div>
       <button class="iconBtn" id="openSettings" title="Ayarlar">⚙️</button>
+    </div>
+
+    <!-- Auth Section -->
+    <div class="sideBody" id="authSection" style="border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 14px;">
+      <div id="loginSection">
+        <button class="primary" id="googleSignIn" type="button" style="width: 100%;">🔐 Google ile Giriş</button>
+        <div class="smallMuted" style="margin-top: 8px; text-align: center;">API kullanımı için giriş gerekli</div>
+      </div>
+      <div id="userSection" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <img id="userPicture" src="" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border);" />
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="userName">Kullanıcı</div>
+            <div class="smallMuted" id="rateLimitInfo">Yükleniyor...</div>
+          </div>
+        </div>
+        <button class="danger" id="googleSignOut" type="button" style="width: 100%;">Çıkış Yap</button>
+      </div>
     </div>
 
     <div class="sideBody">
@@ -603,12 +621,162 @@
   </div>
 </div>
 
+<!-- Google Sign-In -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 <script>
 /** -------------------------
  *  Storage keys
  *  ------------------------- */
 const STORE_KEY = "surveyor_ai_v2";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // .env'den veya config'den alınacak
 const nowStr = () => new Date().toLocaleString("tr-TR", { hour12: false });
+
+/** -------------------------
+ *  Google OAuth
+ *  ------------------------- */
+let googleToken = null;
+let currentUser = null;
+let googleClientId = null;
+
+function getAuthHeaders() {
+  const headers = { "Content-Type": "application/json" };
+  if (googleToken) {
+    headers["Authorization"] = `Bearer ${googleToken}`;
+  }
+  return headers;
+}
+
+async function loadGoogleClientId() {
+  try {
+    const res = await fetch("/api/user/config");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.client_id) {
+        return data.client_id;
+      }
+    }
+  } catch (e) {
+    console.warn("Config endpoint not available, trying fallback");
+  }
+  // Fallback: HTML'deki değişken (eğer set edilmişse)
+  return GOOGLE_CLIENT_ID || null;
+}
+
+async function initGoogleSignIn() {
+  const clientId = await loadGoogleClientId();
+  googleClientId = clientId;
+  
+  if (!clientId) {
+    console.warn("Google Client ID not configured, authentication disabled");
+    document.getElementById("loginSection").style.display = "none";
+    return;
+  }
+
+  if (typeof google === 'undefined' || !google.accounts) {
+    console.warn("Google Sign-In script not loaded");
+    return;
+  }
+
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleCredentialResponse,
+    auto_select: false
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById("googleSignIn"),
+    { 
+      theme: "outline", 
+      size: "large",
+      width: "100%",
+      text: "signin_with",
+      locale: "tr"
+    }
+  );
+
+  // Mevcut token kontrolü
+  const storedToken = localStorage.getItem("google_token");
+  if (storedToken) {
+    verifyToken(storedToken);
+  }
+}
+
+function handleCredentialResponse(response) {
+  googleToken = response.credential;
+  localStorage.setItem("google_token", googleToken);
+  verifyToken(googleToken);
+}
+
+async function verifyToken(token) {
+  try {
+    const res = await fetch("/api/user/me", {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    
+    if (res.ok) {
+      currentUser = await res.json();
+      updateUserUI(currentUser);
+      loadRateLimitInfo();
+    } else {
+      // Token geçersiz, temizle
+      googleToken = null;
+      localStorage.removeItem("google_token");
+      showLoginUI();
+    }
+  } catch (e) {
+    console.error("Token verification error:", e);
+    showLoginUI();
+  }
+}
+
+function showLoginUI() {
+  document.getElementById("loginSection").style.display = "block";
+  document.getElementById("userSection").style.display = "none";
+  currentUser = null;
+}
+
+function updateUserUI(user) {
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("userSection").style.display = "block";
+  
+  document.getElementById("userName").textContent = user.name || user.email || "Kullanıcı";
+  document.getElementById("userEmail").textContent = user.email || "@burakustuner.com";
+  
+  if (user.picture) {
+    document.getElementById("userPicture").src = user.picture;
+    document.getElementById("userPicture").style.display = "block";
+  } else {
+    document.getElementById("userPicture").style.display = "none";
+  }
+}
+
+async function loadRateLimitInfo() {
+  try {
+    const res = await fetch("/api/user/rate-limit", {
+      headers: getAuthHeaders()
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const remaining = data.remaining || 0;
+      const limit = data.limit || 100;
+      const resetDate = new Date(data.reset_at * 1000);
+      document.getElementById("rateLimitInfo").textContent = 
+        `${remaining}/${limit} istek kaldı (${resetDate.toLocaleTimeString("tr-TR")} sıfırlanır)`;
+    }
+  } catch (e) {
+    console.error("Rate limit info error:", e);
+  }
+}
+
+document.getElementById("googleSignOut")?.addEventListener("click", () => {
+  googleToken = null;
+  currentUser = null;
+  localStorage.removeItem("google_token");
+  showLoginUI();
+  // Sayfayı yenile
+  location.reload();
+});
 
 /** -------------------------
  *  Default templates
@@ -920,9 +1088,17 @@ function renderChat(){
  *  ------------------------- */
 async function loadModels(){
   try{
-    modelHintEl.textContent = "Ollama’dan modeller çekiliyor…";
-    const res = await fetch("/api/tags");
-    if (!res.ok) throw new Error(await res.text());
+    modelHintEl.textContent = "Ollama'dan modeller çekiliyor…";
+    const res = await fetch("/api/tags", {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        showLoginUI();
+        throw new Error("Giriş yapmanız gerekiyor");
+      }
+      throw new Error(await res.text());
+    }
     const data = await res.json();
     const models = (data?.models || []).map(m => m.name).filter(Boolean);
 
@@ -1064,7 +1240,7 @@ async function ask(prompt){
   try{
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
       signal: aborter.signal
     });
@@ -1074,7 +1250,18 @@ async function ask(prompt){
       const t = await res.text();
       thinking.div.remove();
       if (assistantBubble?.div) assistantBubble.div.remove();
-      addBubble("err", "Hata", `${res.status} ${t}`, "http");
+      
+      if (res.status === 401) {
+        addBubble("err", "Hata", "Giriş yapmanız gerekiyor. Lütfen Google ile giriş yapın.", "auth");
+        showLoginUI();
+      } else if (res.status === 429) {
+        const data = JSON.parse(t || "{}");
+        addBubble("err", "Hata", `Rate limit aşıldı. ${data.reset_at ? new Date(data.reset_at * 1000).toLocaleTimeString("tr-TR") : ""} sıfırlanır.`, "rate-limit");
+        loadRateLimitInfo();
+      } else {
+        addBubble("err", "Hata", `${res.status} ${t}`, "http");
+      }
+      
       s.messages.push({ role:"error", content: `${res.status} ${t}`, ts: Date.now() });
       s.updatedAt = Date.now();
       saveState();
@@ -1396,6 +1583,21 @@ deleteTemplateBtn.onclick = () => {
   renderAll();
   autoGrow();
   msgEl.focus();
+  
+  // Google Sign-In'i başlat
+  if (typeof google !== 'undefined' && google.accounts) {
+    initGoogleSignIn();
+  } else {
+    // Google script yüklenene kadar bekle
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (typeof google !== 'undefined' && google.accounts) {
+          initGoogleSignIn();
+        }
+      }, 1000);
+    });
+  }
+  
   loadModels();
 })();
 </script>
