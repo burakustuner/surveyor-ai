@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     command: tunnel run
     environment:
-      - TUNNEL_TOKEN=eyJhIjoiN2ZiNjBkYTI5ZWEyN2VmOGNkOTBlMzc0N2RkZjQ4ODkiLCJ0IjoiMGZiNjQyOGUtYzg3Mi00ZDBiLTg0MmMtMWQ0NGQ1ZjY4N2JkIiwicyI6Ik5XUmhOakl6TURBdE1XVmlZaTAwTXpVMkxXRXdaall0TVRNMk5XVTROMk15TldVMCJ9
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
   webhook:
     image: almir/webhook:latest
     container_name: webhook
