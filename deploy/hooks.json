@@ -5,7 +5,7 @@
     "command-working-directory": "/data/web-site",
     "pass-arguments-to-command": [
       { "source": "string", "name": "-c" },
-      { "source": "string", "name": "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /data/web-site:/data/web-site -v /usr/bin/docker:/usr/bin/docker:ro -w /data/web-site docker:cli sh /data/web-site/deploy.sh" }
+      { "source": "string", "name": "sh /data/web-site/deploy.sh" }
     ],
     "trigger-rule": {
       "match": {
