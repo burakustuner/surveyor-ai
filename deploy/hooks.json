@@ -1,0 +1,21 @@
+[
+  {
+    "id": "deploy",
+    "execute-command": "/bin/bash",
+    "command-working-directory": "/data/web-site",
+    "pass-arguments-to-command": [
+      { "source": "string", "name": "/data/web-site/deploy.sh" }
+    ],
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "refs/heads/main",
+        "parameter": {
+          "source": "payload",
+          "name": "ref"
+        }
+      }
+    },
+    "secret": "dsgsbmımwoe203_AWergbsg_+r3f-"
+  }
+]
