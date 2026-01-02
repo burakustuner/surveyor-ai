@@ -383,6 +383,13 @@ async def get_rate_limit_info(user: dict = Depends(get_current_user)):
 @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 async def proxy_to_ollama(path: str, request: Request, user: dict = Depends(get_current_user)):
     """Ollama API'sine proxy"""
+    # Backend endpoint'lerini proxy etme
+    if path.startswith("user/"):
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Endpoint not found"}
+        )
+    
     url = f"{OLLAMA_URL}/api/{path}"
     
     # Request body
