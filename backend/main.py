@@ -26,10 +26,10 @@ app = FastAPI(title="Surveyor AI API Gateway")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Production'da domain'e kısıtla
+    allow_origins=ALLOWED_ORIGINS,  # Environment variable'dan alınan domain'ler
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Security
@@ -41,6 +41,10 @@ DB_PATH = os.getenv("DB_PATH", "/data/db/app.db")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))  # İstek sayısı
 RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "3600"))  # Saniye (1 saat)
+
+# CORS allowed origins
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://www.surveyor.work,http://localhost:8082").split(",")
+ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
 
 # Database setup
 def init_db():

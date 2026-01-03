@@ -45,6 +45,7 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-3600}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://www.surveyor.work,http://localhost:8082}
     depends_on:
       - ollama
 
