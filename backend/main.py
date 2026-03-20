@@ -21,30 +21,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Surveyor AI API Gateway")
+# CORS listesi — add_middleware'tan ÖNCE tanımlanmalı (aksi halde NameError)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://www.surveyor.work,http://localhost:8082").split(",")
+ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,  # Environment variable'dan alınan domain'ler
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-)
-
-# Security
-security = HTTPBearer(auto_error=False)
-
-# Config
+# Config (env)
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 DB_PATH = os.getenv("DB_PATH", "/data/db/app.db")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))  # İstek sayısı
 RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "3600"))  # Saniye (1 saat)
 
-# CORS allowed origins
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://www.surveyor.work,http://localhost:8082").split(",")
-ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
+app = FastAPI(title="Surveyor AI API Gateway")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+)
+
+security = HTTPBearer(auto_error=False)
 
 # Database setup
 def init_db():
