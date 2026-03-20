@@ -16,5 +16,23 @@
         }
       }
     }
+  },
+  {
+    "id": "deploy-webgis",
+    "execute-command": "/bin/sh",
+    "command-working-directory": "/data/webgis_backend",
+    "pass-arguments-to-command": [
+      { "source": "string", "name": "/data/webgis_backend/deploy/deploy-webgis.sh" }
+    ],
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "refs/heads/main",
+        "parameter": {
+          "source": "payload",
+          "name": "ref"
+        }
+      }
+    }
   }
 ]
