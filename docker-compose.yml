@@ -12,6 +12,8 @@ services:
       - backend
       - ollama
       - webhook
+    networks:
+       - proxy-net
 
   ollama:
     image: ollama/ollama:latest
@@ -21,6 +23,8 @@ services:
       - ./ollama:/root/.ollama
     expose:
       - "11434"
+    networks:
+      - proxy-net
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -29,6 +33,9 @@ services:
     command: tunnel run
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - proxy-net
+
   backend:
     build:
       context: ./backend
@@ -48,6 +55,8 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://www.surveyor.work,http://localhost:8082}
     depends_on:
       - ollama
+    networks:
+      - proxy-net
 
   webhook:
     build:
@@ -66,3 +75,8 @@ services:
     environment:
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
     command: ["-hooks=/etc/webhook/hooks.json", "-verbose"]
+    networks:
+      - proxy-net
+networks:
+  proxy-net:
+    external: true
