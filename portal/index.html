@@ -105,16 +105,6 @@
       font-weight: 560;
       letter-spacing: -0.03em;
     }
-    .state {
-      margin-top: auto;
-      align-self: flex-start;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      color: var(--muted);
-      font-size: 13px;
-    }
-    body.signed-in .state { color: var(--accent-ink); background: var(--accent); border-color: transparent; }
     .error { color: #ffb4b4; min-height: 1.2em; margin: 14px 0 0; }
     .credit {
       display: flex;
@@ -152,12 +142,10 @@
         <a class="app" href="/ai/">
           <span class="index">01</span>
           <b>Surveyor AI</b>
-          <span class="state">Giriş yapınca açılır</span>
         </a>
         <a class="app" href="/dusey/">
           <span class="index">02</span>
           <b>Düşey Güzergâh</b>
-          <span class="state">Giriş yapınca açılır</span>
         </a>
       </div>
       <p class="error" id="error" hidden></p>
@@ -173,7 +161,6 @@
     const signInButton = document.getElementById("googleSignIn");
     const sessionEl = document.getElementById("session");
     const errorEl = document.getElementById("error");
-    const states = document.querySelectorAll(".state");
     let clientId = "";
 
     function showError(message) {
@@ -183,12 +170,8 @@
 
     function setSignedIn(on) {
       document.body.classList.toggle("locked", !on);
-      document.body.classList.toggle("signed-in", on);
       signInButton.hidden = on;
       sessionEl.hidden = !on;
-      states.forEach((item) => {
-        item.textContent = on ? "Aç" : "Giriş yapınca açılır";
-      });
     }
 
     function showApps(user) {
