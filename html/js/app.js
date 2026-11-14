@@ -12,6 +12,11 @@ import { getTemplateById } from './templates.js';
 import { DEFAULT_TEMPLATES } from './config.js';
 
 function init() {
+  if (!localStorage.getItem("google_token")) {
+    window.location.replace("/");
+    return;
+  }
+
   dom.initDOM();
 
   const state = getState();

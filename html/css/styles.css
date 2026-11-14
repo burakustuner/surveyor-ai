@@ -94,6 +94,10 @@ body{
   overflow:hidden;
   text-overflow: ellipsis;
 }
+.title a{
+  font-size: .75rem;
+  color: var(--muted);
+}
 
 .iconBtn{
   border: 1px solid var(--border);

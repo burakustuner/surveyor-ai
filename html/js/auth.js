@@ -141,7 +141,7 @@ export async function verifyToken(token) {
     } else {
       googleToken = null;
       localStorage.removeItem("google_token");
-      ui.showLoginUI();
+      window.location.replace("/");
     }
   } catch (e) {
     console.error("Token verification error:", e);
@@ -201,7 +201,6 @@ export function signOut() {
   googleToken = null;
   currentUser = null;
   localStorage.removeItem("google_token");
-  ui.showLoginUI();
-  location.reload();
+  location.replace("/");
 }
 

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Surveyor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Outfit:wght@380;500;610&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #f4f1ea;
+      --muted: #b7c0b8;
+      --line: rgba(244, 241, 234, 0.16);
+      --card: rgba(18, 28, 24, 0.72);
+      --accent: #d6f25c;
+      --accent-ink: #17200a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      color: var(--ink);
+      font-family: Outfit, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(900px 480px at 10% -10%, rgba(214, 242, 92, 0.16), transparent 55%),
+        radial-gradient(700px 420px at 110% 10%, rgba(90, 140, 120, 0.2), transparent 50%),
+        linear-gradient(180deg, #121a17 0%, #0c1210 100%);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(244, 241, 234, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(244, 241, 234, 0.035) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(180deg, #000 0%, transparent 85%);
+    }
+    .wrap {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 28px;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+    .account { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+    .who { display: flex; align-items: center; gap: 10px; }
+    .who img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    button, .ghost {
+      font: inherit;
+      color: inherit;
+      border: 1px solid var(--line);
+      background: transparent;
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button.primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: transparent;
+      font-weight: 610;
+    }
+    button:disabled { opacity: 0.45; cursor: default; }
+    main { flex: 1; padding: 56px 0 12px; }
+    .apps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 48px;
+    }
+    .app {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 22px;
+      text-decoration: none;
+      color: inherit;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      backdrop-filter: blur(10px);
+      transition: transform 160ms ease, border-color 160ms ease;
+    }
+    .app:hover { transform: translateY(-3px); border-color: rgba(214, 242, 92, 0.55); }
+    .index { color: var(--muted); font-size: 13px; }
+    .app b {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 32px;
+      font-weight: 560;
+      letter-spacing: -0.03em;
+    }
+    .state {
+      margin-top: auto;
+      align-self: flex-start;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    body.signed-in .state { color: var(--accent-ink); background: var(--accent); border-color: transparent; }
+    .error { color: #ffb4b4; min-height: 1.2em; margin: 14px 0 0; }
+    .credit {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      align-self: flex-end;
+      margin-top: auto;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .credit a { color: var(--ink); }
+    @media (max-width: 760px) {
+      .wrap { padding: 20px 16px 24px; }
+      .apps { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+      .app { min-height: 0; }
+    }
+  </style>
+</head>
+<body class="locked">
+  <div class="wrap">
+    <header>
+      <div class="brand">Surveyor</div>
+      <div class="account">
+        <button class="primary" type="button" id="googleSignIn" disabled>Google ile giriş</button>
+        <div class="who" id="session" hidden>
+          <img id="picture" alt="" hidden />
+          <span id="who"></span>
+          <button type="button" id="signOut">Çıkış</button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="apps" id="apps">
+        <a class="app" href="/ai/">
+          <span class="index">01</span>
+          <b>Surveyor AI</b>
+          <span class="state">Giriş yapınca açılır</span>
+        </a>
+        <a class="app" href="/dusey/">
+          <span class="index">02</span>
+          <b>Düşey Güzergâh</b>
+          <span class="state">Giriş yapınca açılır</span>
+        </a>
+      </div>
+      <p class="error" id="error" hidden></p>
+    </main>
+  <footer class="credit">
+    <span>Burak Üstüner</span>
+    <a href="https://burakustuner.com" target="_blank" rel="noopener noreferrer">burakustuner.com</a>
+  </footer>
+  </div>
+  <script>
+    const TOKEN_KEY = "google_token";
+    const NONCE_KEY = "surveyor_google_nonce";
+    const signInButton = document.getElementById("googleSignIn");
+    const sessionEl = document.getElementById("session");
+    const errorEl = document.getElementById("error");
+    const states = document.querySelectorAll(".state");
+    let clientId = "";
+
+    function showError(message) {
+      errorEl.hidden = !message;
+      errorEl.textContent = message || "";
+    }
+
+    function setSignedIn(on) {
+      document.body.classList.toggle("locked", !on);
+      document.body.classList.toggle("signed-in", on);
+      signInButton.hidden = on;
+      sessionEl.hidden = !on;
+      states.forEach((item) => {
+        item.textContent = on ? "Aç" : "Giriş yapınca açılır";
+      });
+    }
+
+    function showApps(user) {
+      setSignedIn(true);
+      document.getElementById("who").textContent = user.name || user.email || "Oturum açık";
+      const picture = document.getElementById("picture");
+      if (user.picture) {
+        picture.src = user.picture;
+        picture.hidden = false;
+      }
+    }
+
+    function showLogin() {
+      localStorage.removeItem(TOKEN_KEY);
+      setSignedIn(false);
+    }
+
+    function startSignIn() {
+      if (!clientId) return;
+      const nonce = crypto.randomUUID();
+      sessionStorage.setItem(NONCE_KEY, nonce);
+      const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      url.searchParams.set("client_id", clientId);
+      url.searchParams.set("redirect_uri", location.origin);
+      url.searchParams.set("response_type", "id_token");
+      url.searchParams.set("scope", "openid email profile");
+      url.searchParams.set("nonce", nonce);
+      url.searchParams.set("prompt", "select_account");
+      location.assign(url.toString());
+    }
+
+    async function verify(token) {
+      const response = await fetch("/api/user/me", {
+        headers: { Authorization: "Bearer " + token }
+      });
+      if (!response.ok) {
+        showLogin();
+        return;
+      }
+      showApps(await response.json());
+    }
+
+    function takeHashToken() {
+      const params = new URLSearchParams(location.hash.slice(1));
+      if (!params.has("id_token") && !params.has("error")) {
+        return localStorage.getItem(TOKEN_KEY);
+      }
+      history.replaceState({}, document.title, location.pathname + location.search);
+      const token = params.get("id_token");
+      const expected = sessionStorage.getItem(NONCE_KEY);
+      sessionStorage.removeItem(NONCE_KEY);
+      if (!token || !expected) {
+        showError("Google girişi tamamlanamadı.");
+        return null;
+      }
+      const part = token.split(".")[1] || "";
+      try {
+        const padded = part.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(part.length / 4) * 4, "=");
+        const payload = JSON.parse(atob(padded));
+        if (payload.nonce !== expected) {
+          showError("Google girişi doğrulanamadı.");
+          return null;
+        }
+      } catch (e) {
+        showError("Google girişi doğrulanamadı.");
+        return null;
+      }
+      localStorage.setItem(TOKEN_KEY, token);
+      return token;
+    }
+
+    signInButton.addEventListener("click", startSignIn);
+    document.getElementById("signOut").addEventListener("click", showLogin);
+    document.getElementById("apps").addEventListener("click", (event) => {
+      if (!document.body.classList.contains("locked")) return;
+      event.preventDefault();
+      startSignIn();
+    });
+
+    fetch("/api/user/config")
+      .then((response) => response.json())
+      .then((config) => {
+        clientId = config.client_id || "";
+        signInButton.disabled = !clientId;
+        if (!clientId) showError("Google girişi yapılandırılmamış.");
+        const token = takeHashToken();
+        if (token) return verify(token);
+      })
+      .catch(() => showError("Giriş servisine ulaşılamadı."));
+  </script>
+</body>
+</html>
